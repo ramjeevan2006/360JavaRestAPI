@@ -10,3 +10,27 @@ WITH CTE AS (
         10000.00 AS MARKET_VALUE
 )
 SELECT * FROM CTE;
+
+
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+
+public class JsonToMapExample {
+    public static void main(String[] args) {
+        // The JSON string (replace this with the actual string from your input)
+        String jsonString = "{\"operationType\":\"Insert\",\"eventPublishedTimestamp\":\"2025-01-31-18:30:15.171825\",\"chit\":\"000026168218029705667\",\"traceId\":\"070993211\",\"failureMessage\":\"Account member issuer BU number not found\"}";
+
+        // Convert the JSON string to a Map
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            Map<String, String> resultMap = objectMapper.readValue(jsonString, Map.class);
+
+            // Print the map to verify
+            resultMap.forEach((key, value) -> System.out.println(key + " : " + value));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
