@@ -34,3 +34,46 @@ public class JsonToMapExample {
         }
     }
 }
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 
+      1) Console appender for local usage 
+      2) GCP Logging appender for production (will also work locally if you have
+         credentials, but typically it just logs to console if you’re not in GCP).
+    -->
+
+    <!-- Optional: include Spring’s default base config if you want standard logging patterns -->
+    <include resource="org/springframework/boot/logging/logback/base.xml" />
+
+    <!-- 1) Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- Simple pattern for local dev -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 2) Google Cloud Logging Appender -->
+    <appender name="GCP" class="com.google.cloud.logging.logback.LoggingAppender">
+        <!-- The log name is how it will appear in Cloud Logging -->
+        <log>my-application-log</log>
+        
+        <!-- 
+          resourceType can be “global”, or a more specific type like “gae_app” 
+          or “gce_instance”, etc., if you’re on App Engine or GCE. 
+          For generic usage, “global” is fine.
+        -->
+        <resourceType>global</resourceType>
+        
+        <!-- By default, the LoggingAppender uses JSON-style structured logs in GCP. -->
+    </appender>
+
+    <!-- Set the log level to INFO for all logs -->
+    <root level="INFO">
+        <!-- Attach both the console and the Google Cloud appenders -->
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="GCP"/>
+    </root>
+</configuration>
