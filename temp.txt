@@ -149,4 +149,27 @@ public class LogEnrichmentFilter extends OncePerRequestFilter {
     </root>
 </configuration>
 
+<!-- logback-spring-prod.xml (activated by spring.profiles.active=prod) -->
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- same pattern or a simpler pattern -->
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="GCP" class="com.google.cloud.logging.logback.LoggingAppender">
+        <log>my-application-log</log>
+        <resourceType>global</resourceType>
+        <!-- MDC-based fields included automatically in JSON -->
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="GCP"/>
+    </root>
+</configuration>
+
+
+
 
