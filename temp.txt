@@ -128,3 +128,25 @@ public class LogEnrichmentFilter extends OncePerRequestFilter {
     }
 }
 
+
+<configuration>
+    <!-- Console appender for local -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} 
+                - correlationId=%X{clientCorrelationId} 
+                  appId=%X{clientAppId} 
+                  resourceVersion=%X{resourceVersion} 
+                  %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>
+
+
