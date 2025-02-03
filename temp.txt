@@ -171,5 +171,33 @@ public class LogEnrichmentFilter extends OncePerRequestFilter {
 </configuration>
 
 
+<configuration>
+
+    <!-- CONSOLE appender with a pattern that references the MDC fields -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}
+                - correlationId=%X{clientCorrelationId}
+                  appId=%X{clientAppId}
+                  resourceVersion=%X{resourceVersion}
+                  %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- GCP appender (for JSON logging in GCP) -->
+    <appender name="GCP" class="com.google.cloud.logging.logback.LoggingAppender">
+        <log>my-application-log</log>
+        <resourceType>global</resourceType>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="GCP" />
+    </root>
+</configuration>
+
+
 
 
