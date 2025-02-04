@@ -199,5 +199,34 @@ public class LogEnrichmentFilter extends OncePerRequestFilter {
 </configuration>
 
 
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <!-- Console appender for local logging -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- Google Cloud Logging Appender -->
+  <appender name="GCP" class="com.google.cloud.logging.logback.LoggingAppender">
+    <!-- Specify your log resource (for example, the log name under your GCP project) -->
+    <log>projects/your-project-id/logs/your-log-id</log>
+    <!-- Tell the appender which MDC keys to include as labels in the JSON payload -->
+    <includeMdcKeyNames>correlation, app-radian, resource-version</includeMdcKeyNames>
+    <!-- Optionally, adjust the flush level if needed -->
+    <flushLevel>ERROR</flushLevel>
+  </appender>
+
+  <!-- Root logger configuration -->
+  <root level="INFO">
+    <appender-ref ref="CONSOLE" />
+    <appender-ref ref="GCP" />
+  </root>
+  
+</configuration>
+
+
 
 
