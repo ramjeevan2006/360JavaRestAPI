@@ -228,5 +228,19 @@ public class LogEnrichmentFilter extends OncePerRequestFilter {
 </configuration>
 
 
+Subject: Issues Encountered During Sandbox to Dev Promotion
+
+Hi Shiva,
+
+During the promotion of our Spring Boot application from Sandbox to Dev, we encountered a few issues, but I would like to highlight that there were no code-related issues—everything is well-organized and functioning as expected. The challenges we faced were primarily related to the deployment configuration:
+	1.	Some secrets referenced in the code were missing from the Dev Secret Manager.
+	2.	The profile name was not passed correctly during deployment, which caused misconfigurations.
+
+I assisted in identifying and resolving these issues, ensuring a smooth transition. The application is now in a stable state in the Dev environment. Please let me know if any further action is required from my end.
+
+Best regards,
+Ram
+
+
 
 
