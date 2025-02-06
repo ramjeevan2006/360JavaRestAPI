@@ -241,6 +241,21 @@ I assisted in identifying and resolving these issues, ensuring a smooth transiti
 Best regards,
 Ram
 
+<appender name="GCP" class="com.google.cloud.logging.logback.LoggingAppender">
+    <log>your-log-name</log>
+    <resourceType>global</resourceType>
+    <labels>
+        <entry>
+            <key>environment</key>
+            <value>production</value>
+        </entry>
+        <entry>
+            <key>serviceName</key>
+            <value>my-service</value>
+        </entry>
+    </labels>
+</appender>
+
 
 
 
