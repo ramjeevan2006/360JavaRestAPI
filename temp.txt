@@ -1,3 +1,27 @@
+
+Subject: Clarification on Mitigation for Low Flaws in DiscoveryClientGeneric.jar
+
+Hi [Team Name],
+
+I am currently submitting mitigations for Veracode scan issues related to the Schwab jar files used in our project. I have referred to the Confluence page that documents mitigations for known issues, which has been helpful for addressing high and medium flaws.
+
+However, I noticed that there are no documented mitigations for three low flaws associated with DiscoveryClientGeneric.jar. The details are as follows:
+	1.	File: TestSigningService.java
+	•	CWE ID: 347
+	2.	File: HTTPClient.java
+	•	CWE ID: 201
+	3.	File: HTTPClient.java
+	•	CWE ID: 201
+
+Could you please confirm if there are existing mitigations for these flaws that are not yet documented, or advise on the next steps to address them?
+
+Appreciate your guidance on this.
+
+Thanks,
+Ram
+
+
+
 CREATE OR REPLACE VIEW CDS.CROSS_PRODUCT.VW_SAMDA_SOD_POSITION_FOF AS
 WITH CTE AS (
     SELECT 
