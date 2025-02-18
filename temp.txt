@@ -1,0 +1,86 @@
+@Service
+public class AccountComplianceReconService {
+
+    /**
+     * Builds a list of AccountComplianceRecon objects by comparing the input details with the DB map.
+     * The special case logic uses only input values: if acct_compliance_code equals "FAP",
+     * then fw_flagStatus_string is forced to "FC".
+     *
+     * @param dbEntityMap  Map of primary key (fw_id) to CreditCardAccountComplianceEntity.
+     * @param inputDetails List of AccountComplianceDetails coming from the input.
+     * @return List of fully populated AccountComplianceRecon objects.
+     */
+    public List<AccountComplianceRecon> compareAndBuildRecon(
+            Map<String, CreditCardAccountComplianceEntity> dbEntityMap,
+            List<AccountComplianceDetails> inputDetails
+    ) {
+        List<AccountComplianceRecon> reconList = new ArrayList<>();
+
+        for (AccountComplianceDetails input : inputDetails) {
+            // Look up the DB entity using the primary key (fw_id)
+            CreditCardAccountComplianceEntity dbEntity = dbEntityMap.get(input.getFw_id());
+
+            AccountComplianceRecon recon = new AccountComplianceRecon();
+
+            // 1. Map primary key
+            recon.setFw_id(input.getFw_id());
+
+            // 2. Map acct_compliance_code
+            if (isNotEmpty(input.getAcct_compliance_code())) {
+                recon.setAcct_compliance_code(input.getAcct_compliance_code());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getComplianceCode())) {
+                recon.setAcct_compliance_code(dbEntity.getComplianceCode());
+            } else {
+                recon.setAcct_compliance_code(null);
+            }
+
+            // 3. Map acct_compliance_effectiveDate
+            if (isNotEmpty(input.getAcct_compliance_effectiveDate())) {
+                recon.setAcct_compliance_effectiveDate(input.getAcct_compliance_effectiveDate());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getComplianceEffectiveDate())) {
+                recon.setAcct_compliance_effectiveDate(dbEntity.getComplianceEffectiveDate());
+            } else {
+                recon.setAcct_compliance_effectiveDate(null);
+            }
+
+            // 4. Map cust_reltnshp_cd_string directly from input
+            recon.setCust_reltnshp_cd_string(input.getCust_reltnshp_cd_string());
+
+            // 5. Map acct_tax_status_cd_string directly from input
+            recon.setAcct_tax_status_cd_string(input.getAcct_tax_status_cd_string());
+
+            // 6. Special CASE logic for fw_flagStatus_string:
+            //    If input acct_compliance_code equals "FAP", then force fw_flagStatus_string to "FC".
+            //    Otherwise, simply map the input value.
+            if ("FAP".equals(input.getAcct_compliance_code())) {
+                recon.setFw_flagStatus_string("FC");
+            } else {
+                recon.setFw_flagStatus_string(input.getFw_flagStatus_string());
+            }
+
+            // 7. Map acct_first_mia_indicator directly from input
+            recon.setAcct_first_mia_indicator(input.getAcct_first_mia_indicator());
+
+            // 8. Map acct_fee_status_code directly from input
+            recon.setAcct_fee_status_code(input.getAcct_fee_status_code());
+
+            // 9. Map FW_HdrTimestamp directly from input
+            recon.setFW_HdrTimestamp(input.getFW_HdrTimestamp());
+
+            // 10. Map load_ts directly from input
+            recon.setLoad_ts(input.getLoad_ts());
+
+            // Add the final recon object to the list
+            reconList.add(recon);
+        }
+
+        return reconList;
+    }
+
+    /**
+     * Utility method to check if a String is non-null and not just whitespace.
+     */
+    private boolean isNotEmpty(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+}
