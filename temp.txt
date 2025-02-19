@@ -2,75 +2,172 @@
 public class AccountComplianceReconService {
 
     /**
-     * Builds a list of AccountComplianceRecon objects by comparing input details with the DB entity map.
-     * For fields that exist in both input and output, it directly maps them. For acct_compliance_code,
-     * if the value is "FAP", then fw_flagStatus_string is forced to "FC". For a few fields, if the input
-     * value is missing, it falls back to the DB entity value.
+     * Reconciles input details against DB entities and builds a list of AccountComplianceRecon.
+     * 
+     * Rules:
+     *  - If an input field is non-empty, use that in the output.
+     *  - Otherwise, if the DB entity has a value, use that.
+     *  - Special case: if input.complianceCode == "FAP", then output.FW_compStatusCode = "FC".
      *
-     * @param dbEntityMap  Map of primary key (fw_id) to CreditCardAccountComplianceEntity
-     * @param inputDetails List of AccountComplianceDetails coming from the input
-     * @return List of fully populated AccountComplianceRecon objects
+     * @param dbEntityMap  map of (uid -> CreditCardAccountComplianceEntity)
+     * @param inputDetails list of incoming AccountComplianceDetails
+     * @return a list of reconciled AccountComplianceRecon objects
      */
     public List<AccountComplianceRecon> compareAndBuildRecon(
-            Map<String, CreditCardAccountComplianceEntity> dbEntityMap,
-            List<AccountComplianceDetails> inputDetails
+        Map<String, CreditCardAccountComplianceEntity> dbEntityMap,
+        List<AccountComplianceDetails> inputDetails
     ) {
         List<AccountComplianceRecon> reconList = new ArrayList<>();
 
         for (AccountComplianceDetails input : inputDetails) {
-            // Lookup DB entity using the primary key (fw_id)
-            CreditCardAccountComplianceEntity dbEntity = dbEntityMap.get(input.getFw_id());
+
+            // 1) Find matching DB entity by 'uid'
+            CreditCardAccountComplianceEntity dbEntity = dbEntityMap.get(input.getUid());
+
+            // 2) Create a new recon object (using Lombok builder for clarity)
+            AccountComplianceRecon recon = AccountComplianceRecon.builder().build();
+
+            // ============= Field-by-field mapping with fallback =============
             
-            AccountComplianceRecon recon = new AccountComplianceRecon();
+            // (A) uid -> FW_uid
+            if (isNotEmpty(input.getUid())) {
+                recon.setFW_uid(input.getUid());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getUid())) {
+                recon.setFW_uid(dbEntity.getUid());
+            } else {
+                recon.setFW_uid(null);
+            }
 
-            // Map primary key
-            recon.setFw_id(input.getFw_id());
-
-            // Map acct_compliance_code (input takes precedence; fallback to DB if needed)
-            if (isNotEmpty(input.getAcct_compliance_code())) {
-                recon.setAcct_compliance_code(input.getAcct_compliance_code());
+            // (B) complianceCode -> FW_complianceCode
+            if (isNotEmpty(input.getComplianceCode())) {
+                recon.setFW_complianceCode(input.getComplianceCode());
             } else if (dbEntity != null && isNotEmpty(dbEntity.getComplianceCode())) {
-                recon.setAcct_compliance_code(dbEntity.getComplianceCode());
+                recon.setFW_complianceCode(dbEntity.getComplianceCode());
             } else {
-                recon.setAcct_compliance_code(null);
+                recon.setFW_complianceCode(null);
             }
 
-            // Map acct_compliance_effectiveDate (input takes precedence; fallback to DB)
-            if (isNotEmpty(input.getAcct_compliance_effectiveDate())) {
-                recon.setAcct_compliance_effectiveDate(input.getAcct_compliance_effectiveDate());
-            } else if (dbEntity != null && isNotEmpty(dbEntity.getComplianceEffectiveDate())) {
-                recon.setAcct_compliance_effectiveDate(dbEntity.getComplianceEffectiveDate());
+            // (C) effectiveDate -> FW_effectiveDate
+            if (isNotEmpty(input.getEffectiveDate())) {
+                recon.setFW_effectiveDate(input.getEffectiveDate());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getEffectiveDate())) {
+                recon.setFW_effectiveDate(dbEntity.getEffectiveDate());
             } else {
-                recon.setAcct_compliance_effectiveDate(null);
+                recon.setFW_effectiveDate(null);
             }
 
-            // Map cust_reltnshp_cd_string directly from input
-            recon.setCust_reltnshp_cd_string(input.getCust_reltnshp_cd_string());
-
-            // Map acct_tax_status_cd_string directly from input
-            recon.setAcct_tax_status_cd_string(input.getAcct_tax_status_cd_string());
-
-            // CASE LOGIC for fw_flagStatus_string:
-            // If acct_compliance_code equals "FAP" then force fw_flagStatus_string to "FC",
-            // otherwise, simply pass the input value.
-            if ("FAP".equals(input.getAcct_compliance_code())) {
-                recon.setFw_flagStatus_string("FC");
+            // (D) entryTime -> FW_entryTime
+            if (isNotEmpty(input.getEntryTime())) {
+                recon.setFW_entryTime(input.getEntryTime());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getEntryTime())) {
+                recon.setFW_entryTime(dbEntity.getEntryTime());
             } else {
-                recon.setFw_flagStatus_string(input.getFw_flagStatus_string());
+                recon.setFW_entryTime(null);
             }
 
-            // Map acct_first_mia_indicator directly from input
-            recon.setAcct_first_mia_indicator(input.getAcct_first_mia_indicator());
+            // (E) compStatusCode -> FW_compStatusCode
+            //     SPECIAL CASE: if input.complianceCode == "FAP", force "FC"
+            if ("FAP".equalsIgnoreCase(input.getComplianceCode())) {
+                recon.setFW_compStatusCode("FC");
+            } else if (isNotEmpty(input.getCompStatusCode())) {
+                recon.setFW_compStatusCode(input.getCompStatusCode());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getCompStatusCode())) {
+                recon.setFW_compStatusCode(dbEntity.getCompStatusCode());
+            } else {
+                recon.setFW_compStatusCode(null);
+            }
 
-            // Map acct_fee_status_code directly from input
-            recon.setAcct_fee_status_code(input.getAcct_fee_status_code());
+            // (F) amtState -> FW_amtState
+            if (isNotEmpty(input.getAmtState())) {
+                recon.setFW_amtState(input.getAmtState());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getAmtState())) {
+                recon.setFW_amtState(dbEntity.getAmtState());
+            } else {
+                recon.setFW_amtState(null);
+            }
 
-            // Map FW_HdrTimestamp directly from input
-            recon.setFW_HdrTimestamp(input.getFW_HdrTimestamp());
+            // (G) complianceEndDate -> FW_complianceEndDate
+            if (isNotEmpty(input.getComplianceEndDate())) {
+                recon.setFW_complianceEndDate(input.getComplianceEndDate());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getComplianceEndDate())) {
+                recon.setFW_complianceEndDate(dbEntity.getComplianceEndDate());
+            } else {
+                recon.setFW_complianceEndDate(null);
+            }
 
-            // Map load_ts directly from input
-            recon.setLoad_ts(input.getLoad_ts());
+            // (H) complianceStartDate -> FW_complianceStartDate
+            if (isNotEmpty(input.getComplianceStartDate())) {
+                recon.setFW_complianceStartDate(input.getComplianceStartDate());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getComplianceStartDate())) {
+                recon.setFW_complianceStartDate(dbEntity.getComplianceStartDate());
+            } else {
+                recon.setFW_complianceStartDate(null);
+            }
 
+            // (I) taxExpiryDate -> FW_taxExpiryDate
+            if (isNotEmpty(input.getTaxExpiryDate())) {
+                recon.setFW_taxExpiryDate(input.getTaxExpiryDate());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getTaxExpiryDate())) {
+                recon.setFW_taxExpiryDate(dbEntity.getTaxExpiryDate());
+            } else {
+                recon.setFW_taxExpiryDate(null);
+            }
+
+            // (J) accountTi -> FW_account_ti
+            if (isNotEmpty(input.getAccountTi())) {
+                recon.setFW_account_ti(input.getAccountTi());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getAccountTi())) {
+                recon.setFW_account_ti(dbEntity.getAccountTi());
+            } else {
+                recon.setFW_account_ti(null);
+            }
+
+            // (K) statusCode -> FW_status_code
+            if (isNotEmpty(input.getStatusCode())) {
+                recon.setFW_status_code(input.getStatusCode());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getStatusCode())) {
+                recon.setFW_status_code(dbEntity.getStatusCode());
+            } else {
+                recon.setFW_status_code(null);
+            }
+
+            // (L) fastStatusCode -> FW_fast_status_code
+            if (isNotEmpty(input.getFastStatusCode())) {
+                recon.setFW_fast_status_code(input.getFastStatusCode());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getFastStatusCode())) {
+                recon.setFW_fast_status_code(dbEntity.getFastStatusCode());
+            } else {
+                recon.setFW_fast_status_code(null);
+            }
+
+            // (M) acctFeeStatusCode -> acct_fee_status_code
+            if (isNotEmpty(input.getAcctFeeStatusCode())) {
+                recon.setAcct_fee_status_code(input.getAcctFeeStatusCode());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getAcctFeeStatusCode())) {
+                recon.setAcct_fee_status_code(dbEntity.getAcctFeeStatusCode());
+            } else {
+                recon.setAcct_fee_status_code(null);
+            }
+
+            // (N) entryDate -> FW_entryDate
+            if (isNotEmpty(input.getEntryDate())) {
+                recon.setFW_entryDate(input.getEntryDate());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getEntryDate())) {
+                recon.setFW_entryDate(dbEntity.getEntryDate());
+            } else {
+                recon.setFW_entryDate(null);
+            }
+
+            // (O) lastMaintainTimestamp -> lastMaintainTimestamp
+            if (isNotEmpty(input.getLastMaintainTimestamp())) {
+                recon.setLastMaintainTimestamp(input.getLastMaintainTimestamp());
+            } else if (dbEntity != null && isNotEmpty(dbEntity.getLastMaintainTimestamp())) {
+                recon.setLastMaintainTimestamp(dbEntity.getLastMaintainTimestamp());
+            } else {
+                recon.setLastMaintainTimestamp(null);
+            }
+
+            // 3) Add to the final list
             reconList.add(recon);
         }
 
@@ -78,7 +175,7 @@ public class AccountComplianceReconService {
     }
 
     /**
-     * Utility method to check if a String is non-null and not just whitespace.
+     * Checks if a string is non-null and not just whitespace.
      */
     private boolean isNotEmpty(String value) {
         return value != null && !value.trim().isEmpty();
